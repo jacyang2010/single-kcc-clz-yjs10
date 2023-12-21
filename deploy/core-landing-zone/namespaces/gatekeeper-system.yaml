@@ -1,0 +1,88 @@
+# Copyright 2021 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#########
+# Since we are using GKE Workload Identity we must complete the following steps outlined in
+# [Implementing Policy Controller Metrics](https://cloud.google.com/anthos-config-management/docs/how-to/policy-controller-metrics)
+# to implement Policy Controller Metrics and avoid numerous IAM errors on the Config Controller instance.
+#########
+# GCP SA
+# AC-3(7), AC-3, AC-16(2) - This service account possesses limited privileges(permissions) and is restricted to performing only the necessary operations for resources within the designated namespace. The service account is associated with the namespace and is assigned roles as required.
+apiVersion: iam.cnrm.cloud.google.com/v1beta1
+kind: IAMServiceAccount
+metadata: # kpt-merge: config-control/gatekeeper-admin-sa
+  name: gatekeeper-admin-sa
+  namespace: config-control # kpt-set: ${management-namespace}
+  annotations:
+    cnrm.cloud.google.com/project-id: single-kcc-yjs10 # kpt-set: ${management-project-id}
+    cnrm.cloud.google.com/ignore-clusterless: "true"
+    internal.kpt.dev/upstream-identifier: 'iam.cnrm.cloud.google.com|IAMServiceAccount|config-control|gatekeeper-admin-sa'
+    cnrm.cloud.google.com/blueprint: 'kpt-pkg-fn'
+spec:
+  # AC-3(7), AC-3, AC-16(2)
+  displayName: gatekeeper-admin-sa
+---
+# Grant GCP role Metrics Writer to gatekeeper-admin SA on KCC Project
+apiVersion: iam.cnrm.cloud.google.com/v1beta1
+kind: IAMPolicyMember
+metadata: # kpt-merge: config-control/gatekeeper-admin-sa-metric-writer-permissions
+  name: gatekeeper-admin-sa-metric-writer-permissions
+  namespace: config-control # kpt-set: ${management-namespace}
+  annotations:
+    cnrm.cloud.google.com/project-id: single-kcc-yjs10 # kpt-set: ${management-project-id}
+    cnrm.cloud.google.com/ignore-clusterless: "true"
+    internal.kpt.dev/upstream-identifier: 'iam.cnrm.cloud.google.com|IAMPolicyMember|config-control|gatekeeper-admin-sa-metric-writer-permissions'
+    cnrm.cloud.google.com/blueprint: 'kpt-pkg-fn'
+spec:
+  resourceRef:
+    apiVersion: resourcemanager.cnrm.cloud.google.com/v1beta1
+    kind: Project
+    external: single-kcc-yjs10 # kpt-set: ${management-project-id}
+  # AC-3(7), AC-3, AC-16(2)
+  role: roles/monitoring.metricWriter
+  member: "serviceAccount:gatekeeper-admin-sa@single-kcc-yjs10.iam.gserviceaccount.com" # kpt-set: serviceAccount:gatekeeper-admin-sa@${management-project-id}.iam.gserviceaccount.com
+---
+apiVersion: iam.cnrm.cloud.google.com/v1beta1
+kind: IAMPartialPolicy
+metadata: # kpt-merge: config-control/gatekeeper-admin-sa-workload-identity-binding
+  name: gatekeeper-admin-sa-workload-identity-binding
+  namespace: config-control # kpt-set: ${management-namespace}
+  annotations:
+    cnrm.cloud.google.com/project-id: single-kcc-yjs10 # kpt-set: ${management-project-id}
+    cnrm.cloud.google.com/ignore-clusterless: "true"
+    internal.kpt.dev/upstream-identifier: 'iam.cnrm.cloud.google.com|IAMPartialPolicy|config-control|gatekeeper-admin-sa-workload-identity-binding'
+    cnrm.cloud.google.com/blueprint: 'kpt-pkg-fn'
+spec:
+  resourceRef:
+    name: gatekeeper-admin-sa
+    apiVersion: iam.cnrm.cloud.google.com/v1beta1
+    kind: IAMServiceAccount
+  # AC-3(7), AC-3, AC-16(2)
+  bindings:
+    - role: roles/iam.workloadIdentityUser
+      members:
+        - member: serviceAccount:single-kcc-yjs10.svc.id.goog[gatekeeper-system/gatekeeper-admin] # kpt-set: serviceAccount:${management-project-id}.svc.id.goog[gatekeeper-system/gatekeeper-admin]
+---
+# Link GCP SA to K8S namespace
+apiVersion: core.cnrm.cloud.google.com/v1beta1
+kind: ConfigConnectorContext
+metadata: # kpt-merge: gatekeeper-system/configconnectorcontext.core.cnrm.cloud.google.com
+  name: configconnectorcontext.core.cnrm.cloud.google.com
+  namespace: gatekeeper-system
+  annotations:
+    cnrm.cloud.google.com/ignore-clusterless: "true"
+    internal.kpt.dev/upstream-identifier: 'core.cnrm.cloud.google.com|ConfigConnectorContext|gatekeeper-system|configconnectorcontext.core.cnrm.cloud.google.com'
+    cnrm.cloud.google.com/blueprint: 'kpt-pkg-fn'
+spec:
+  # AC-3(7), AC-3, AC-16(2)
+  googleServiceAccount: gatekeeper-admin-sa@single-kcc-yjs10.iam.gserviceaccount.com # kpt-set: gatekeeper-admin-sa@${management-project-id}.iam.gserviceaccount.com

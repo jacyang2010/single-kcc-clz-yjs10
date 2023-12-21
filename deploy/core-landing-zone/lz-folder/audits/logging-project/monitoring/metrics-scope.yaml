@@ -1,0 +1,26 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#########
+# add scope to monitor metrics in 'management-project-id' from 'logging-project-id'
+apiVersion: monitoring.cnrm.cloud.google.com/v1beta1
+kind: MonitoringMonitoredProject
+metadata: # kpt-merge: logging/management-project-id
+  # name needs to be the project ID of the project to be monitored
+  name: single-kcc-yjs10 # kpt-set: ${management-project-id}
+  namespace: logging
+  annotations:
+    internal.kpt.dev/upstream-identifier: 'monitoring.cnrm.cloud.google.com|MonitoringMonitoredProject|logging|management-project-id'
+    cnrm.cloud.google.com/blueprint: 'kpt-pkg-fn'
+spec:
+  metricsScope: location/global/metricsScopes/logging-project-yjs10 # kpt-set: location/global/metricsScopes/${logging-project-id}
