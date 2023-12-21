@@ -12,22 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #########
-apiVersion: constraints.gatekeeper.sh/v1beta1
-kind: NamingPolicyProject
-metadata: # kpt-merge: /namingpolicyproject
-  name: namingpolicyproject
-  annotations:
-    internal.kpt.dev/upstream-identifier: 'constraints.gatekeeper.sh|NamingPolicyProject|default|namingpolicyproject'
-spec:
-  match:
-    kinds:
-      - apiGroups:
-          - '*'
-        kinds:
-          - Project
-  parameters:
-    client_code: ^(aa|bb|cc) # kpt-set: ${client_code}
-    env_code: ^(aa|bb|cc)d # kpt-set: ${client_code}${env_code}
-    region_code: m
-    class_code: (u|a|b)-
-    user_defined_string: '^[a-z][a-z0-9-]*[a-z0-9]$'
+# apiVersion: constraints.gatekeeper.sh/v1beta1
+# kind: NamingPolicyProject
+# metadata: # kpt-merge: /namingpolicyproject
+#   name: namingpolicyproject
+#   annotations:
+#     internal.kpt.dev/upstream-identifier: 'constraints.gatekeeper.sh|NamingPolicyProject|default|namingpolicyproject'
+# spec:
+#   match:
+#     kinds:
+#       - apiGroups:
+#           - '*'
+#         kinds:
+#           - Project
+#   parameters:
+#     client_code: ^(aa|bb|cc) # kpt-set: ${client_code}
+#     env_code: ^(aa|bb|cc)d # kpt-set: ${client_code}${env_code}
+#     region_code: m
+#     class_code: (u|a|b)-
+#     user_defined_string: '^[a-z][a-z0-9-]*[a-z0-9]$'
